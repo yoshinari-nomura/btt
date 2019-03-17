@@ -1,0 +1,10 @@
+## Config file example for btt
+##
+## https://github.com/yoshinari-nomura/btt
+##
+## MAC addaddress shoud be upper-case and colon-separated.
+##
+
+BLUETOOTH_AP_MACADDR="11:22:33:AA:BB:CC"
+BLUETOOTH_AP_NAME="ap_name_showed_in_your_macos_menubar"
+MR05LN_WAKEUP_MACADDR="44:55:66:DD:EE:FF"

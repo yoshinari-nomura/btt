@@ -1,0 +1,79 @@
+#+TITLE: btt -- CLI から bluetooth テザリング (+ MR05LN を起こす)
+#+AUTHOR: Yoshinari Nomura
+#+EMAIL:
+#+DATE:
+#+OPTIONS: H:3 num:2 toc:nil
+#+OPTIONS: ^:nil @:t \n:nil ::t |:t f:t TeX:t
+#+OPTIONS: skip:nil
+#+OPTIONS: author:t
+#+OPTIONS: email:nil
+#+OPTIONS: creator:nil
+#+OPTIONS: timestamp:nil
+#+OPTIONS: timestamps:nil
+#+OPTIONS: d:nil
+#+OPTIONS: tags:t
+#+TEXT:
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE: ja
+#+LATEX_CLASS: jsarticle
+#+LATEX_CLASS_OPTIONS: [a4j,dvipdfmx]
+# #+LATEX_HEADER: \usepackage{plain-article}
+# #+LATEX_HEADER: \renewcommand\maketitle{}
+# #+LATEX_HEADER: \pagestyle{empty}
+# #+LaTeX: \thispagestyle{empty}
+
+* BTT とは?
+  btt は，CLI から bluetooth テザリングを on/off するツールです．
+  モバイルルータ Aterm MR05LN の休止状態から復帰させる機能も持っています．
+
+  Linux と macOS に対応しています．Linux では，内部で nmcli を利用し，
+  macOS では， oascript (JXA) を利用して，GUI メニューを操作することで実現しています．
+
+* 利用方法
+  #+begin_example
+    Usage: btt [-w] {watch|on|off|wakeup}
+          on ... connect to bluetooth AP
+         off ... disconnect from bluetooth AP
+       watch ... keep connected to bluetooth AP if Wi-Fi is off
+      wakeup ... wakeup bluetooth AP (NMR05LN)
+          -w ... perform 'wakeup' in 'on' and 'watch' operations
+  #+end_example
+
+* 必要とされる環境
+  このシェルスクリプトは，内部で以下のコマンドを利用しています．
+  これらが正しく動くことを確認してください．
+
+** Linux
+   + l2test (/usr/bin): apt install bluez
+   + nmcli  (/usr/bin): apt install network-manager
+   + ip     (/sbin):    apt install iproute2
+
+** macOS
+   + blueutil     (/usr/local/bin): brew install blueutil
+   + networksetup (/usr/bin)
+   + osascript    (/usr/bin)
+   + route        (/sbin)
+
+* セットアップ
+  1) config ファイルを ~/.config/btt/config.sh に置いて設定します
+     #+begin_src shell-script
+       mkdir -p ~/.config/btt
+       cp ./config.sh.example ~/.config/btt/config.sh
+       vi ~/.config/btt/config.sh
+     #+end_src
+
+     config.sh の例:
+     #+begin_src shell-script
+       ## Config file example for btt
+       ##
+       ## https://github.com/yoshinari-nomura/btt
+       ##
+       ## MAC addaddress shoud be upper-case and colon-separated.
+       ##
+       BLUETOOTH_AP_MACADDR="11:22:33:AA:BB:CC"
+       BLUETOOTH_AP_NAME="ap_name_showed_in_your_macos_menubar"
+       MR05LN_WAKEUP_MACADDR="44:55:66:DD:EE:FF"
+     #+end_src
+
+  2) ./btt ファイルを任意の bin ディレクトリにコピーします

@@ -1,0 +1,281 @@
+#!/bin/sh
+
+################################################################
+# MR05LN-specific functions
+
+send_wakeup_ping_to_mr05ln() {
+  case $(uname -s) in
+    Linux)
+      l2test -n $bt_address_for_wakeup 2>&1 | grep -q '(104)'
+      ;;
+    Darwin)
+      blueutil --connect $bt_address_for_wakeup
+      ;;
+    *)
+      ;;
+  esac >/dev/null 2>&1
+
+  return $?
+}
+
+wakeup_mr05ln() {
+  local bt_address_for_wakeup="$1"
+
+  message "Waking up MR05LN..."
+
+  if send_wakeup_ping_to_mr05ln $bt_address_for_wakeup; then
+    # wakeup ping is successfull
+    message "waiting..."
+    sleep 8
+  else
+    # do nothing. already awake?
+    message "already awake?..."
+    true
+  fi
+
+  message "done.\n"
+}
+
+################################################################
+# Connect and disconnect to/from bluetooth Network Access Point
+#
+# macOS requires bluetooth access point name,
+# whlie linux requires bluetooth macaddress.
+#
+# NOTE: nmcli requires uppercase and colon-separated macaddr.
+# TODO: convert macaddr notation to allow lower-case.
+#
+
+macos_connect_nap() {
+  local bt_name="$1"
+  macos_click_menu "bluetooth" "$bt_name" "ネットワークへ接続"
+}
+
+macos_disconnect_nap() {
+  local bt_name="$1"
+  macos_click_menu "bluetooth" "$bt_name" "ネットワークから接続解除"
+}
+
+linux_connect_nap() {
+  local bt_address="$1"
+  nmcli -w 2 device connect "$bt_address"
+}
+
+linux_disconnect_nap() {
+  local bt_address="$1"
+  nmcli -w 2 device disconnect "$bt_address"
+}
+
+connect_nap() {
+  local bt_address="$1"
+  local bt_name="$2"
+
+  message "Connecting to $bt_name..."
+
+  case $(uname -s) in
+    Linux)
+      linux_connect_nap "$bt_address"
+      ;;
+    Darwin)
+      macos_connect_nap "$bt_name"
+      ;;
+    *)
+      ;;
+  esac >/dev/null 2>&1
+  message "done.\n"
+}
+
+disconnect_nap() {
+  local bt_address="$1"
+  local bt_name="$2"
+
+  message "Disconnecting from $bt_name..."
+
+  case $(uname -s) in
+    Linux)
+      linux_disconnect_nap "$bt_address"
+      ;;
+    Darwin)
+      macos_disconnect_nap "$bt_name"
+      ;;
+    *)
+      ;;
+  esac >/dev/null 2>&1
+  message "done.\n"
+}
+
+################################################################
+# Watch network state and try to connect to bluetooth Network AP
+#
+
+watch() {
+  while true
+  do
+    if has_active_network; then
+      message "Has active network, do nothing.\n"
+      sleep 10
+    else
+      message "No active network, "
+
+      if is_wifi_on; then
+        message "but don't enable bt network, because Wi-Fi is on\n."
+        sleep 2
+      else
+        message "enabling bt network...\n"
+        if [ "$OPT_WAKEUP" = true ]; then
+          wakeup_mr05ln $MR05LN_WAKEUP_MACADDR
+        fi
+        connect_nap $BLUETOOTH_AP_MACADDR $BLUETOOTH_AP_NAME
+        sleep 5
+      fi
+    fi
+  done
+}
+
+################################################################
+# check current environment
+
+has_active_network() {
+  case $(uname -s) in
+    Linux)
+      /sbin/ip route get 8.8.8.8
+      ;;
+    Darwin)
+      /sbin/route -nq get 8.8.8.8  | grep -q gateway
+      ;;
+    *)
+      ;;
+  esac >/dev/null 2>&1
+}
+
+is_wifi_on() {
+  case $(uname -s) in
+    Linux)
+      nmcli radio wifi | grep -q 'enabled'
+      ;;
+    Darwin)
+      networksetup -getairportpower en0 | grep -q 'On$'
+      ;;
+    *)
+      ;;
+  esac
+}
+
+################################################################
+# UI helper
+
+message() {
+  printf "$1" >&2
+}
+
+error() {
+  message "Error: $1"
+}
+
+exist_all_envs() {
+  local retval=0
+
+  for varname in "$@"
+  do
+    eval value=\$$varname
+    if [ -z "$value" ]; then
+      error "ENV $varname is not set.\n"
+      retval=1
+    fi
+  done
+
+  return $retval
+}
+
+macos_click_menu() {
+  osascript -l JavaScript - "$@" << EOF
+  function run(argv) {
+    var menu_path = argv
+    var ui = Application('System Events').processes['SystemUIServer']
+    var menu = undefined
+
+    menu_path.forEach(m => {
+      if (!menu) {
+        menu = ui.menuBars[0].menuBarItems().find(x => {return x.description() == m})
+      } else {
+        menu = menu.menus[0].menuItems[m]
+      }
+      try {
+        menu = menu.click()
+      } catch {
+        console.log("No such menu item: " + m)
+        return -1
+      }
+      delay(0.1)
+    })
+  }
+EOF
+}
+
+usage() {
+  message "Usage: btt [-w] {watch|on|off|wakeup}\n"
+  message "      on ... connect to bluetooth AP\n"
+  message "     off ... disconnect from bluetooth AP\n"
+  message "   watch ... keep connected to bluetooth AP if Wi-Fi is off\n"
+  message "  wakeup ... wakeup bluetooth AP (NMR05LN)\n"
+  message "      -w ... perform 'wakeup' in 'on' and 'watch' operations\n"
+}
+
+################################################################
+# main
+
+CONFIG_FILE_PATH="$HOME/.config/btt/config.sh"
+
+if [ -f "$HOME/.config/btt/config.sh" ]; then
+  . "$HOME/.config/btt/config.sh"
+fi
+
+if ! exist_all_envs \
+     MR05LN_WAKEUP_MACADDR \
+     BLUETOOTH_AP_MACADDR \
+     BLUETOOTH_AP_NAME; then
+  message "Environment vars are required:
+  BLUETOOTH_AP_MACADDR=44:55:66:DD:EE:FF
+  BLUETOOTH_AP_NAME=ap_name_showed_in_your_macos_menubar
+  MR05LN_WAKEUP_MACADDR=11:22:33:AA:BB:CC
+  You can place these setup in $CONFIG_FILE_PATH\n"
+  exit 1
+fi
+
+while getopts "w" flag
+do
+  case $flag in
+    # getopts sets '?' to flag on error.
+    \?|h) OPT_ERROR=1           ;;
+    w)    OPT_WAKEUP="true"     ;;
+  esac
+done
+shift $(( $OPTIND - 1 ))
+
+# unknown option check
+if [ "$OPT_ERROR" = 1 -o $# -lt 1 ]; then
+  usage
+  exit 1
+fi
+
+case "$1" in
+  watch)
+    watch
+    ;;
+  on)
+    if [ "$OPT_WAKEUP" = true ]; then
+      wakeup_mr05ln $MR05LN_WAKEUP_MACADDR
+    fi
+    connect_nap $BLUETOOTH_AP_MACADDR $BLUETOOTH_AP_NAME
+    ;;
+  off)
+    disconnect_nap $BLUETOOTH_AP_MACADDR $BLUETOOTH_AP_NAME
+    ;;
+  wake*)
+    wakeup_mr05ln $MR05LN_WAKEUP_MACADDR
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

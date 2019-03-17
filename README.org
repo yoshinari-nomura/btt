@@ -1,0 +1,84 @@
+#+TITLE: btt -- CLI to kick bluetooth tehtering w/ waking up MR05LN
+#+AUTHOR:
+#+EMAIL:
+#+DATE:
+#+OPTIONS: H:3 num:2 toc:nil
+#+OPTIONS: ^:nil @:t \n:nil ::t |:t f:t TeX:t
+#+OPTIONS: skip:nil
+#+OPTIONS: author:t
+#+OPTIONS: email:nil
+#+OPTIONS: creator:nil
+#+OPTIONS: timestamp:nil
+#+OPTIONS: timestamps:nil
+#+OPTIONS: d:nil
+#+OPTIONS: tags:t
+#+TEXT:
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE: ja
+#+LATEX_CLASS: jsarticle
+#+LATEX_CLASS_OPTIONS: [a4j,dvipdfmx]
+# #+LATEX_HEADER: \usepackage{plain-article}
+# #+LATEX_HEADER: \renewcommand\maketitle{}
+# #+LATEX_HEADER: \pagestyle{empty}
+# #+LaTeX: \thispagestyle{empty}
+
+[[file:README-ja.org][日本語(Japanese)]]
+
+* What is BTT?
+  btt is a CLI tool to start/stop bluetooth tehtering.
+  It also has a function to wakeup Aterm MR05LN.
+
+  btt is compatible with Linux and macOS. Linux version uses nmcli internally,
+  macOS version uses oascript (JXA) to control GUI menu.
+
+* Usage
+  #+begin_example
+    Usage: btt [-w] {watch|on|off|wakeup}
+          on ... connect to bluetooth AP
+         off ... disconnect from bluetooth AP
+       watch ... keep connected to bluetooth AP if Wi-Fi is off
+      wakeup ... wakeup bluetooth AP (NMR05LN)
+          -w ... perform 'wakeup' in 'on' and 'watch' operations
+  #+end_example
+
+* Requirements
+  This shell script uses these commands internally.
+  Make sure these comands are correctly setup.
+
+  このシェルスクリプトは，内部で以下のコマンドを利用しています．
+  これらが正しく動くことを確認してください．
+
+** Linux
+   + l2test (/usr/bin): apt install bluez
+   + nmcli  (/usr/bin): apt install network-manager
+   + ip     (/sbin):    apt install iproute2
+
+** macOS
+   + blueutil     (/usr/local/bin): brew install blueutil
+   + networksetup (/usr/bin)
+   + osascript    (/usr/bin)
+   + route        (/sbin)
+
+* Setup
+  1) Place config flie as ~/.config/btt/config.sh
+     #+begin_src shell-script
+       mkdir -p ~/.config/btt
+       cp ./config.sh.example ~/.config/btt/config.sh
+       vi ~/.config/btt/config.sh
+     #+end_src
+
+     example of config.sh:
+     #+begin_src shell-script
+       ## Config file example for btt
+       ##
+       ## https://github.com/yoshinari-nomura/btt
+       ##
+       ## MAC addaddress shoud be upper-case and colon-separated.
+       ##
+       BLUETOOTH_AP_MACADDR="11:22:33:AA:BB:CC"
+       BLUETOOTH_AP_NAME="ap_name_showed_in_your_macos_menubar"
+       MR05LN_WAKEUP_MACADDR="44:55:66:DD:EE:FF"
+     #+end_src
+
+  2) Copy ./btt file in your bin directory

@@ -1,4 +1,4 @@
-#+TITLE: btt -- CLI to kick bluetooth tehtering w/ waking up MR05LN
+#+TITLE: btt -- CLI to kick bluetooth tethering w/ waking up MR05LN
 #+AUTHOR:
 #+EMAIL:
 #+DATE:
@@ -26,7 +26,7 @@
 [[file:README-ja.org][日本語(Japanese)]]
 
 * What is BTT?
-  btt is a CLI tool to start/stop bluetooth tehtering.
+  btt is a CLI tool to start/stop bluetooth tethering.
   It also has a function to wakeup Aterm MR05LN.
 
   btt is compatible with Linux and macOS. Linux version uses nmcli internally,
@@ -45,9 +45,6 @@
 * Requirements
   This shell script uses these commands internally.
   Make sure these comands are correctly setup.
-
-  このシェルスクリプトは，内部で以下のコマンドを利用しています．
-  これらが正しく動くことを確認してください．
 
 ** Linux
    + l2test (/usr/bin): apt install bluez

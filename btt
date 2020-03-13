@@ -30,7 +30,6 @@ wakeup_mr05ln() {
   else
     # do nothing. already awake?
     message "already awake?..."
-    true
   fi
 
   message "done.\n"

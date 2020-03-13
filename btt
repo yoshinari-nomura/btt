@@ -4,9 +4,18 @@
 # MR05LN-specific functions
 
 send_wakeup_ping_to_mr05ln() {
+  local bt_address_for_wakeup="$1"
+
   case $(uname -s) in
     Linux)
-      l2test -n $bt_address_for_wakeup 2>&1 | grep -q '(104)'
+      # Try to connect to $bt_address_for_wakeup.
+      # If $bt_address_for_wakeup is exposed
+      # (== MR05LN is sleeping), l2test shows:
+      #   l2test[27063]: Can't connect: Permission denied (13)
+      # else (== already awake):
+      #   l2test[27211]: Can't connect: Host is down (112)
+      #
+      l2test -n $bt_address_for_wakeup 2>&1 | grep -q '(13)'
       ;;
     Darwin)
       blueutil --connect $bt_address_for_wakeup

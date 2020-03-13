@@ -58,12 +58,12 @@ macos_disconnect_nap() {
 
 linux_connect_nap() {
   local bt_address="$1"
-  nmcli -w 2 device connect "$bt_address"
+  nmcli -w 10 device connect "$bt_address"
 }
 
 linux_disconnect_nap() {
   local bt_address="$1"
-  nmcli -w 2 device disconnect "$bt_address"
+  nmcli -w 10 device disconnect "$bt_address"
 }
 
 connect_nap() {
